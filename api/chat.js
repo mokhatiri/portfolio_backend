@@ -2,10 +2,12 @@ import { profileContext } from "./profile.js";
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://mokhatiri.github.io",
+  "https://portfolio-backend-mu-mauve.vercel.app/",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:5500",
 ];
+
 
 const rateLimitWindowMs = 60 * 1000;
 const maxRequestsPerWindow = 12;
@@ -27,8 +29,8 @@ export default async function handler(request, response) {
     return sendJson(response, 405, { error: "Method not allowed" }, headers);
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return sendJson(response, 500, { error: "OPENAI_API_KEY is not configured." }, headers);
+  if (!process.env.HF_TOKEN) {
+    return sendJson(response, 500, { error: "HF_TOKEN is not configured." }, headers);
   }
 
   const clientId = getClientId(request);
@@ -120,27 +122,35 @@ function isRateLimited(clientId) {
 }
 
 async function askModel(question) {
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const model = process.env.HF_MODEL || "Qwen/Qwen2.5-72B-Instruct";
   const context = buildAssistantContext();
 
-  const modelResponse = await fetch("https://api.openai.com/v1/responses", {
+  const systemPrompt =
+    "You are MK Bot, a concise and friendly robot assistant on Mohammed Khatiri's portfolio. Answer only from the supplied context. If the context does not contain the answer, say that you do not know and suggest contacting Mohammed. Do not invent degrees, employers, dates, endorsements, or LinkedIn details.";
+
+  const modelResponse = await fetch("https://router.huggingface.co/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Authorization": `Bearer ${process.env.HF_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model,
-      instructions:
-        "You are MK Bot, a concise and friendly robot assistant on Mohammed Khatiri's portfolio. Answer only from the supplied context. If the context does not contain the answer, say that you do not know and suggest contacting Mohammed. Do not invent degrees, employers, dates, endorsements, or LinkedIn details.",
-      input: `Portfolio context:\n${context}\n\nVisitor question:\n${question}`,
-      max_output_tokens: 350,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Portfolio context:\n${context}\n\nVisitor question:\n${question}`,
+        },
+      ],
+      max_tokens: 350,
+      temperature: 0.3,
     }),
   });
 
   if (!modelResponse.ok) {
     const errorText = await modelResponse.text();
-    throw new Error(`OpenAI API error ${modelResponse.status}: ${errorText}`);
+    throw new Error(`Hugging Face API error ${modelResponse.status}: ${errorText}`);
   }
 
   const data = await modelResponse.json();
@@ -156,19 +166,11 @@ function buildAssistantContext() {
 }
 
 function extractOutputText(data) {
-  if (typeof data.output_text === "string" && data.output_text.trim()) {
-    return data.output_text.trim();
+  const message = data.choices?.[0]?.message?.content;
+
+  if (typeof message === "string" && message.trim()) {
+    return message.trim();
   }
 
-  const textParts = [];
-
-  for (const item of data.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === "output_text" && content.text) {
-        textParts.push(content.text);
-      }
-    }
-  }
-
-  return textParts.join("\n").trim() || "I could not generate an answer right now.";
+  return "I could not generate an answer right now.";
 }
