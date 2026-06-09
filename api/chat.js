@@ -123,7 +123,7 @@ function isRateLimited(clientId) {
 
 async function askModel(question) {
   const model = process.env.HF_MODEL || "Qwen/Qwen2.5-72B-Instruct";
-  const context = buildAssistantContext();
+  const context = await buildAssistantContext();
 
   const systemPrompt =
     "You are MK Bot, a concise and friendly robot assistant on Mohammed Khatiri's portfolio. Answer only from the supplied context. If the context does not contain the answer, say that you do not know and suggest contacting Mohammed. Do not invent degrees, employers, dates, endorsements, or LinkedIn details.";
@@ -157,12 +157,67 @@ async function askModel(question) {
   return extractOutputText(data);
 }
 
-function buildAssistantContext() {
+async function buildAssistantContext() {
   const linkedinContext = process.env.LINKEDIN_PROFILE_CONTEXT
     ? `\nLinkedIn context configured by Mohammed:\n${process.env.LINKEDIN_PROFILE_CONTEXT}`
     : "\nLinkedIn live profile data is not configured. Use only the LinkedIn URL from the portfolio.";
 
-  return `${profileContext}${linkedinContext}`;
+  const githubContext = await buildGitHubContext();
+
+  return `${profileContext}${linkedinContext}${githubContext}`;
+}
+
+const githubUsername = process.env.GITHUB_USERNAME || "mokhatiri";
+const githubCacheTtlMs = 10 * 60 * 1000;
+let githubCache = { text: "", expiresAt: 0 };
+
+async function buildGitHubContext() {
+  const now = Date.now();
+  if (githubCache.text && now < githubCache.expiresAt) {
+    return githubCache.text;
+  }
+
+  try {
+    const headers = { Accept: "application/vnd.github+json", "User-Agent": "mk-bot" };
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    const reposResponse = await fetch(
+      `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=100`,
+      { headers },
+    );
+
+    if (!reposResponse.ok) {
+      throw new Error(`GitHub API error ${reposResponse.status}`);
+    }
+
+    const repos = await reposResponse.json();
+    const lines = (Array.isArray(repos) ? repos : [])
+      .filter((repo) => repo && !repo.fork && !repo.private)
+      .slice(0, 30)
+      .map((repo) => {
+        const parts = [`- ${repo.name}`];
+        if (repo.description) parts.push(repo.description.trim());
+        const meta = [];
+        if (repo.language) meta.push(repo.language);
+        if (repo.stargazers_count) meta.push(`${repo.stargazers_count}★`);
+        if (meta.length) parts.push(`(${meta.join(", ")})`);
+        if (repo.html_url) parts.push(repo.html_url);
+        return parts.join(" — ");
+      });
+
+    const text = lines.length
+      ? `\n\nLive public GitHub repositories (from the GitHub API, most recently updated first):\n${lines.join("\n")}`
+      : "";
+
+    githubCache = { text, expiresAt: now + githubCacheTtlMs };
+    return text;
+  } catch (error) {
+    console.error("GitHub context fetch failed:", error);
+    // Serve stale cache if we have it; otherwise degrade gracefully.
+    return githubCache.text || "";
+  }
 }
 
 function extractOutputText(data) {

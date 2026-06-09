@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Local env / secrets
+.env
+.env.*
+.vercel
+
+# LinkedIn data export — contains PII (messages, connections, email, phone).
+# Never commit this. Curate safe fields into api/profile.js instead.
+Basic_LinkedInDataExport_*/
+*LinkedInDataExport*/

@@ -993,6 +993,12 @@ img {
   z-index: 1001;
   transform: translateY(-50%);
   transition: top 0.18s ease-out;
+  animation: robot-idle 4.5s ease-in-out infinite;
+}
+
+/* Keep the bot still while the user is chatting with it. */
+.robot-assistant.open {
+  animation-play-state: paused;
 }
 
 .robot-button {
@@ -1216,6 +1222,33 @@ img {
 
   48% {
     transform: scaleY(0.15);
+  }
+}
+
+/* Gentle idle motion: a small bob and slight sway, kept low so it never drifts far.
+   translateY keeps the -50% baseline that centers the assistant on its anchor. */
+@keyframes robot-idle {
+  0%,
+  100% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(calc(-50% - 3px)) rotate(-1.5deg);
+  }
+
+  50% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
+  75% {
+    transform: translateY(calc(-50% - 2px)) rotate(1.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-assistant {
+    animation: none;
   }
 }
 
