@@ -1,0 +1,12 @@
+{
+  "name": "mokhatiri-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check assets/js/main.js && node --check api/chat.js && node --check api/profile.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
