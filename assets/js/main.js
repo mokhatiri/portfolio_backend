@@ -40,13 +40,45 @@ const languageColors = {
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", () => {
+  initThemeToggle();
   initNavigation();
   initTypingEffect();
   fetchGitHubRepos();
   initContactForm();
   initScrollEffects();
   initRobotAssistant();
+  initOrbAnimation();
 });
+
+// Light / dark theme toggle (persisted in localStorage).
+// The initial theme is set by an inline script in <head> to avoid a flash.
+function initThemeToggle() {
+  const toggle = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  const syncIcon = () => {
+    const icon = toggle?.querySelector("i");
+    if (icon) {
+      const isLight = root.getAttribute("data-theme") === "light";
+      icon.className = isLight ? "fas fa-sun" : "fas fa-moon";
+    }
+  };
+
+  syncIcon();
+
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      try {
+        localStorage.setItem("theme", next);
+      } catch (error) {
+        console.warn("Could not persist theme:", error);
+      }
+      syncIcon();
+    });
+  }
+}
 
 // Navigation functionality
 function initNavigation() {
@@ -446,19 +478,6 @@ function initRobotAssistant() {
     return data.answer;
   }
 
-  function updateRobotPosition() {
-    if (window.matchMedia("(max-width: 768px)").matches) {
-      assistant.style.removeProperty("--robot-top");
-      return;
-    }
-
-    const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = scrollableHeight > 0 ? window.scrollY / scrollableHeight : 0;
-    const top = 20 + progress * 62;
-
-    assistant.style.setProperty("--robot-top", `${top}vh`);
-  }
-
   button.addEventListener("click", () => {
     setChatOpen(!assistant.classList.contains("open"));
   });
@@ -491,7 +510,139 @@ function initRobotAssistant() {
     }
   });
 
-  window.addEventListener("scroll", updateRobotPosition, { passive: true });
-  window.addEventListener("resize", updateRobotPosition);
-  updateRobotPosition();
+}
+
+// A small cloud of glowing particles that lives inside the assistant button.
+// The whole cloud slowly expands and contracts ("breathes") and brightens on
+// the inhale; it energizes briefly while hovered. Drawn on a canvas with
+// additive blending, using the theme's neon accent colours. Honors
+// prefers-reduced-motion by rendering a single static frame.
+function initOrbAnimation() {
+  const button = document.getElementById("robot-button");
+  const canvas = button && button.querySelector(".particle-orb");
+  if (!button || !canvas) {
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Pull the two neon accent colours from the theme so the orb always matches.
+  function readColors() {
+    const css = getComputedStyle(document.documentElement);
+    const parse = (name, fallback) =>
+      (css.getPropertyValue(name).trim() || fallback).split(",").map((n) => parseFloat(n));
+    return {
+      core: parse("--neon-2-rgb", "34, 211, 238"), // cyan, bright centre
+      edge: parse("--neon-1-rgb", "124, 92, 255"), // violet, outer edge
+    };
+  }
+  let colors = readColors();
+
+  // Match the canvas to the button size at the current device pixel ratio.
+  let size = 0;
+  let radius = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    size = button.getBoundingClientRect().width;
+    canvas.width = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    radius = size * 0.3; // leaves room for the glow to stay inside the canvas
+  }
+  resize();
+  window.addEventListener("resize", resize, { passive: true });
+
+  // Particles spread evenly across a disc, each with its own orbit + twinkle.
+  const COUNT = 46;
+  const particles = Array.from({ length: COUNT }, () => {
+    const r = Math.sqrt(Math.random()); // sqrt keeps the disc evenly filled
+    return {
+      angle: Math.random() * Math.PI * 2,
+      baseR: r,
+      spin: (Math.random() - 0.5) * 0.004,
+      twinkle: Math.random() * Math.PI * 2,
+      twSpeed: 0.02 + Math.random() * 0.03,
+      dotR: 0.9 + Math.random() * 1.6,
+      mix: r, // colour lerp: 0 = core, 1 = edge
+    };
+  });
+
+  let hovered = false;
+  let energy = 0;
+  button.addEventListener("mouseenter", () => { hovered = true; });
+  button.addEventListener("mouseleave", () => { hovered = false; });
+
+  let t = 0;
+  function draw() {
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Breathing: a slow inhale/exhale of the whole cloud + matching brightness.
+    const phase = reduceMotion ? Math.PI / 2 : t * 0.018;
+    const breathe = 1 + Math.sin(phase) * 0.16;
+    energy += ((hovered ? 1 : 0) - energy) * 0.08;
+    const scale = breathe + energy * 0.12;
+    const glow = 0.5 + (Math.sin(phase) * 0.5 + 0.5) * 0.35 + energy * 0.15;
+
+    ctx.clearRect(0, 0, size, size);
+    ctx.globalCompositeOperation = "lighter"; // additive blending = real glow
+
+    for (const p of particles) {
+      if (!reduceMotion) {
+        p.angle += p.spin * (1 + energy * 2);
+        p.twinkle += p.twSpeed;
+      }
+      const r = p.baseR * radius * scale;
+      const x = cx + Math.cos(p.angle) * r;
+      const y = cy + Math.sin(p.angle) * r;
+      const tw = 0.55 + (Math.sin(p.twinkle) * 0.5 + 0.5) * 0.45;
+
+      const cr = Math.round(colors.core[0] + (colors.edge[0] - colors.core[0]) * p.mix);
+      const cg = Math.round(colors.core[1] + (colors.edge[1] - colors.core[1]) * p.mix);
+      const cb = Math.round(colors.core[2] + (colors.edge[2] - colors.core[2]) * p.mix);
+
+      const dotR = p.dotR * (1 + energy * 0.4) * 3;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, dotR);
+      grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${glow * tw})`);
+      grad.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // A soft bright core to anchor the cloud.
+    const coreR = radius * 0.6 * scale;
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+    coreGrad.addColorStop(0, `rgba(${colors.core[0]}, ${colors.core[1]}, ${colors.core[2]}, ${0.45 * glow})`);
+    coreGrad.addColorStop(1, `rgba(${colors.core[0]}, ${colors.core[1]}, ${colors.core[2]}, 0)`);
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function frame() {
+    t += 1;
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  if (reduceMotion) {
+    draw(); // single static frame, no animation loop
+  } else {
+    requestAnimationFrame(frame);
+  }
+
+  // Keep the colours in sync when the light/dark theme is toggled.
+  const themeObserver = new MutationObserver(() => {
+    colors = readColors();
+    if (reduceMotion) draw();
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }

@@ -23,8 +23,31 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <!-- Apply saved theme before paint to avoid a flash -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+          document.documentElement.setAttribute(
+            "data-theme",
+            saved || (prefersLight ? "light" : "dark"),
+          );
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
   <body>
+    <!-- Animated background -->
+    <div class="bg-aurora" aria-hidden="true">
+      <span class="blob blob-1"></span>
+      <span class="blob blob-2"></span>
+      <span class="blob blob-3"></span>
+      <span class="grid-overlay"></span>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
       <div class="nav-container">
@@ -55,6 +78,14 @@
             </a>
           </li>
         </ul>
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          type="button"
+          aria-label="Toggle color theme"
+        >
+          <i class="fas fa-moon"></i>
+        </button>
         <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
           <span class="bar"></span>
           <span class="bar"></span>
@@ -451,7 +482,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; 2024 Mohammed Khatiri. All rights reserved.</p>
+          <p>&copy; 2026 Mohammed Khatiri. All rights reserved.</p>
         </div>
       </div>
     </footer>
@@ -466,14 +497,7 @@
         aria-expanded="false"
         aria-controls="robot-chat"
       >
-        <span class="robot-antenna"></span>
-        <span class="robot-face">
-          <span class="robot-eye"></span>
-          <span class="robot-eye"></span>
-        </span>
-        <span class="robot-body">
-          <i class="fas fa-code"></i>
-        </span>
+        <canvas class="particle-orb"></canvas>
       </button>
 
       <section class="robot-chat" id="robot-chat" aria-hidden="true">
@@ -504,7 +528,7 @@
           </button>
         </form>
         <p class="robot-chat-note">
-          Static portfolio bot. A real LLM needs a secure backend endpoint.
+          AI assistant answering from Mohammed's portfolio context.
         </p>
       </section>
     </aside>
