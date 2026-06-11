@@ -51,8 +51,19 @@
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
       <div class="nav-container">
-        <a href="#" class="nav-logo">
-          <span class="logo-text">&lt;MK /&gt;</span>
+        <a href="#" class="nav-logo" aria-label="mokhing — home">
+          <svg class="logo-svg" viewBox="0 0 140 40" role="img">
+            <title>mokhing</title>
+            <defs>
+              <linearGradient id="logo-grad-nav" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--neon-1, #7c5cff)" />
+                <stop offset="100%" stop-color="var(--neon-2, #22d3ee)" />
+              </linearGradient>
+            </defs>
+            <path class="logo-prompt" d="M7 13l9 7-9 7" stroke="url(#logo-grad-nav)" />
+            <text class="logo-word" x="26" y="28" fill="url(#logo-grad-nav)">mokhing</text>
+            <rect class="logo-cursor" x="121" y="25" width="11" height="3.5" rx="1.75" />
+          </svg>
         </a>
         <ul class="nav-menu" id="nav-menu">
           <li class="nav-item">
@@ -318,12 +329,46 @@
           Explore my repositories and contributions
         </p>
 
-        <div class="projects-filter" id="projects-filter">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <!-- Filter buttons generated dynamically based on repositories -->
+        <div
+          class="projects-tabs"
+          id="projects-tabs"
+          role="tablist"
+          aria-label="Repository status"
+        >
+          <!-- Tabs generated dynamically (active / archived repositories) -->
         </div>
 
-        <div class="projects-grid" id="projects-grid">
+        <div class="projects-filter-bar">
+          <button
+            class="filter-arrow"
+            id="filter-arrow-left"
+            aria-label="Scroll languages left"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="projects-filter" id="projects-filter">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <!-- Filter buttons generated dynamically based on repositories -->
+          </div>
+          <button
+            class="filter-arrow"
+            id="filter-arrow-right"
+            aria-label="Scroll languages right"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <select
+            class="projects-sort"
+            id="projects-sort"
+            aria-label="Sort projects by"
+          >
+            <option value="size" selected>Size</option>
+            <option value="updated">Updated</option>
+            <option value="stars">Stars</option>
+          </select>
+        </div>
+
+        <div class="projects-grid" id="projects-grid" role="tabpanel">
           <!-- Projects will be loaded dynamically -->
           <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
@@ -449,7 +494,18 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-logo">
-            <span>&lt;MK /&gt;</span>
+            <svg class="logo-svg" viewBox="0 0 140 40" role="img">
+              <title>mokhing</title>
+              <defs>
+                <linearGradient id="logo-grad-footer" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="var(--neon-1, #7c5cff)" />
+                  <stop offset="100%" stop-color="var(--neon-2, #22d3ee)" />
+                </linearGradient>
+              </defs>
+              <path class="logo-prompt" d="M7 13l9 7-9 7" stroke="url(#logo-grad-footer)" />
+              <text class="logo-word" x="26" y="28" fill="url(#logo-grad-footer)">mokhing</text>
+              <rect class="logo-cursor" x="121" y="25" width="11" height="3.5" rx="1.75" />
+            </svg>
             <p>Building the future, one line of code at a time.</p>
           </div>
           <div class="footer-links">

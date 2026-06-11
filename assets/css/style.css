@@ -314,14 +314,54 @@ img {
   gap: 1rem;
 }
 
-.logo-text {
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo-svg {
+  height: 32px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(var(--neon-1-rgb), 0.25));
+  transition: filter var(--transition);
+}
+
+.nav-logo:hover .logo-svg {
+  filter: drop-shadow(0 0 14px rgba(var(--neon-2-rgb), 0.45));
+}
+
+.logo-prompt {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.logo-word {
   font-family: "Fira Code", monospace;
-  font-weight: 600;
-  font-size: 1.3rem;
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 500;
+  font-size: 22px;
+}
+
+.logo-cursor {
+  fill: var(--neon-2);
+  animation: logo-blink 1.2s steps(1) infinite;
+}
+
+@keyframes logo-blink {
+  0%, 55% {
+    opacity: 1;
+  }
+  56%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-cursor {
+    animation: none;
+  }
 }
 
 .nav-menu {
@@ -533,6 +573,13 @@ img {
 }
 
 /* Hero code window */
+/* Let the grid columns shrink below the code block's natural width,
+   otherwise the pre forces the hero wider than the phone screen */
+.hero-content,
+.hero-visual {
+  min-width: 0;
+}
+
 .hero-visual {
   perspective: 1000px;
 }
@@ -773,15 +820,137 @@ img {
 }
 
 /* ===== Projects ===== */
-.projects-filter {
+.projects-tabs {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  padding: 0.55rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--neon-2);
+}
+
+.tab-count {
+  font-size: 0.8em;
+  font-weight: 500;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.projects-filter-bar {
+  display: flex;
+  align-items: center;
   gap: 0.6rem;
   margin-bottom: 2.5rem;
 }
 
+.projects-filter {
+  display: flex;
+  flex: 1;
+  gap: 0.6rem;
+  /* Vertical room for the buttons' hover lift, which the
+     horizontal scroller would otherwise clip */
+  padding: 8px 2px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.projects-filter::-webkit-scrollbar {
+  display: none;
+}
+
+/* Center the buttons when they all fit, scroll when they overflow */
+.projects-filter .filter-btn:first-child {
+  margin-left: auto;
+}
+
+.projects-filter .filter-btn:last-child {
+  margin-right: auto;
+}
+
+.filter-arrow {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  transition: color var(--transition), opacity var(--transition), transform var(--transition);
+}
+
+.filter-arrow:hover:not(:disabled) {
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.filter-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.projects-sort {
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.5rem 2.1rem 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background-color: var(--glass-bg);
+  /* custom chevron, since appearance: none removes the native arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.projects-sort:hover {
+  color: var(--text-primary);
+  border-color: var(--glass-border-strong);
+}
+
+/* The dropdown list itself ignores glass styles; give it solid theme colors */
+.projects-sort option {
+  background: var(--bg-base) 80%;
+  color: var(--text-primary);
+}
+
 .filter-btn {
+  flex-shrink: 0;
   padding: 0.5rem 1.2rem;
   border-radius: 999px;
   font-size: 0.9rem;
@@ -846,6 +1015,31 @@ img {
   margin-bottom: 1rem;
 }
 
+.project-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.fork-badge,
+.featured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.featured-badge {
+  color: var(--text-primary);
+  background: rgba(var(--neon-3-rgb), 0.12);
+  border-color: rgba(var(--neon-3-rgb), 0.35);
+}
+
 .project-icon {
   font-size: 1.6rem;
   color: var(--neon-2);
@@ -899,6 +1093,31 @@ img {
   font-size: 0.95rem;
   margin-bottom: 1.2rem;
   flex: 1;
+}
+
+.project-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.topic-tag {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: rgba(var(--neon-1-rgb), 0.1);
+  border: 1px solid rgba(var(--neon-1-rgb), 0.22);
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+
+.topic-tag:hover {
+  color: var(--text-primary);
+  background: rgba(var(--neon-2-rgb), 0.16);
+  border-color: var(--neon-2);
 }
 
 .project-meta {
@@ -1073,14 +1292,8 @@ img {
   margin-bottom: 2rem;
 }
 
-.footer-logo span {
-  font-family: "Fira Code", monospace;
-  font-size: 1.3rem;
-  font-weight: 600;
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.footer-logo .logo-svg {
+  height: 28px;
 }
 
 .footer-logo p {
@@ -1454,6 +1667,20 @@ img {
     width: 64px;
     height: 64px;
   }
+
+  .hero-visual {
+    width: 100%;
+  }
+
+  .code-window {
+    max-width: 100%;
+  }
+
+  .window-body {
+    padding: 1.1rem 1rem;
+    font-size: 0.8rem;
+    line-height: 1.7;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1463,6 +1690,10 @@ img {
 
   .footer-content {
     flex-direction: column;
+  }
+
+  .window-body {
+    font-size: 0.7rem;
   }
 }
 
