@@ -1168,6 +1168,39 @@ img {
   color: var(--neon-2);
 }
 
+.projects-show-more {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.projects-show-more:empty {
+  margin-top: 0;
+}
+
+.show-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.6rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.show-more-btn:hover {
+  color: var(--neon-2);
+}
+
+.show-more-btn i {
+  font-size: 0.78rem;
+  transition: transform 0.2s ease;
+}
+
 .projects-more {
   text-align: center;
   margin-top: 2.5rem;

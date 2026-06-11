@@ -6,6 +6,7 @@ const CONTACT_API_URL = window.MK_CONTACT_API_URL || "/api/contact";
 const REPO_CACHE_KEY = "mk-github-repos";
 const REPO_CACHE_TTL_MS = 10 * 60 * 1000;
 const FEATURED_TOPIC = "featured";
+const INITIAL_VISIBLE_REPOS = 6;
 
 // DOM Elements
 const navToggle = document.getElementById("nav-toggle");
@@ -14,6 +15,7 @@ const navbar = document.getElementById("navbar");
 const navLinks = document.querySelectorAll(".nav-link");
 const projectsGrid = document.getElementById("projects-grid");
 const projectsFilter = document.getElementById("projects-filter");
+const showMoreContainer = document.getElementById("projects-show-more");
 const contactForm = document.getElementById("contact-form");
 const typingText = document.getElementById("typing-text");
 const repoCountEl = document.getElementById("repo-count");
@@ -24,6 +26,11 @@ let currentTab = "active";
 let currentTopic = "all";
 let currentSort = "size";
 let updateFilterArrows = () => {};
+
+// The current filtered+sorted list, and whether the user has expanded it.
+// Only INITIAL_VISIBLE_REPOS are shown until "Show all" is clicked.
+let currentRepos = [];
+let showAllRepos = false;
 
 // Language colors mapping
 const languageColors = {
@@ -271,10 +278,12 @@ function initProjectsSection(repos) {
   initFilterArrows();
   initSort();
   initTopicTagClicks();
+  initShowMore();
   applyFilters();
 }
 
-// Display repositories
+// Display repositories. Only the first INITIAL_VISIBLE_REPOS are rendered until
+// the visitor expands the list with the "Show all" toggle.
 function displayRepositories(repos) {
   if (repos.length === 0) {
     projectsGrid.innerHTML = `
@@ -283,11 +292,42 @@ function displayRepositories(repos) {
                 <p>No repositories found.</p>
             </div>
         `;
+    renderShowMore(0);
     return;
   }
 
-  projectsGrid.innerHTML = repos.map((repo) => createRepoCard(repo)).join("");
+  const visible = showAllRepos ? repos : repos.slice(0, INITIAL_VISIBLE_REPOS);
+  projectsGrid.innerHTML = visible.map((repo) => createRepoCard(repo)).join("");
   revealProjectCards();
+  renderShowMore(repos.length);
+}
+
+// Render the "Show all" / "Show less" toggle below the grid. Hidden entirely
+// when the current list already fits within INITIAL_VISIBLE_REPOS.
+function renderShowMore(total) {
+  if (!showMoreContainer) return;
+
+  if (total <= INITIAL_VISIBLE_REPOS) {
+    showMoreContainer.innerHTML = "";
+    return;
+  }
+
+  const label = showAllRepos
+    ? '<i class="fas fa-chevron-up"></i> Show less'
+    : `<i class="fas fa-chevron-down"></i> Show all (${total - INITIAL_VISIBLE_REPOS} more)`;
+
+  showMoreContainer.innerHTML = `<button type="button" class="show-more-btn" id="show-more-btn" aria-expanded="${showAllRepos}">${label}</button>`;
+}
+
+// Toggle the expanded state and re-render from the already-filtered list
+function initShowMore() {
+  if (!showMoreContainer) return;
+
+  showMoreContainer.addEventListener("click", (event) => {
+    if (!event.target.closest("#show-more-btn")) return;
+    showAllRepos = !showAllRepos;
+    displayRepositories(currentRepos);
+  });
 }
 
 // Fade-up reveal for freshly rendered cards (the global scroll-effects
@@ -478,6 +518,9 @@ function applyFilters() {
   // Featured repos stay pinned on top regardless of the chosen sort
   repos.sort((a, b) => isFeatured(b) - isFeatured(a));
 
+  // Changing tab/filter/sort collapses back to the initial set
+  currentRepos = repos;
+  showAllRepos = false;
   displayRepositories(repos);
 }
 
